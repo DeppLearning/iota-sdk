@@ -100,6 +100,8 @@ pub trait SignTransactionEssence: SecretManage {
 
 pub trait SecretM: SecretManage + SignTransactionEssence {}
 
+impl <T: SecretManage + SignTransactionEssence> SecretM for T {}
+
 // Boxes make this type clumsy to use.
 pub enum SecretManager {
     /// Secret manager that uses [`iota_stronghold`] as the backing storage.

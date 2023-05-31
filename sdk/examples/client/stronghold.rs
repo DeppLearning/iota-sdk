@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use iota_sdk::{client::{
     api::{GetAddressesBuilder, PreparedTransactionData},
     constants::{SHIMMER_COIN_TYPE, SHIMMER_TESTNET_BECH32_HRP},
-    secret::{stronghold::StrongholdSecretManager, SecretManager, SecretM, SignTransactionEssence, SecretManage, GenerateAddressOptions},
+    secret::{stronghold::StrongholdSecretManager, SecretManager, SignTransactionEssence, SecretManage, GenerateAddressOptions},
     Result, stronghold::StrongholdAdapter,
 }, types::block::{unlock::{Unlocks, Unlock, SignatureUnlock}, address::Address, signature::{Ed25519Signature, Signature}}};
 use core::ops::Range;
@@ -49,7 +49,6 @@ impl SecretManage for GenericSecretManager {
     }
     
 }
-impl SecretM for GenericSecretManager {}
 
 #[async_trait]
 impl SignTransactionEssence for GenericSecretManager {
@@ -72,7 +71,7 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     // let mnemonic = std::env::var("NON_SECURE_USE_OF_DEVELOPMENT_MNEMONIC_1").unwrap();
     // The mnemonic only needs to be stored the first time
-    stronghold_secret_manager.store_mnemonic("endorse answer radar about source reunion marriage tag sausage weekend frost daring base attack because joke dream slender leisure group reason prepare broken river".to_string()).await?;
+    // stronghold_secret_manager.store_mnemonic("endorse answer radar about source reunion marriage tag sausage weekend frost daring base attack because joke dream slender leisure group reason prepare broken river".to_string()).await?;
 
     // Generate addresses with custom account index and range
     let addresses = GetAddressesBuilder::new(&SecretManager::Generic(Box::new(GenericSecretManager(stronghold_secret_manager))))
