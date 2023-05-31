@@ -40,6 +40,7 @@ where
             SecretManagerDto::LedgerNano(is_simulator) => s.serialize_str(&format!("ledgerNano({is_simulator})")),
             SecretManagerDto::Mnemonic(_) => s.serialize_str("mnemonic(<omitted>)"),
             SecretManagerDto::Placeholder => s.serialize_str("placeholder"),
+            SecretManagerDto::Generic => s.serialize_str("generic"),
             #[cfg(feature = "stronghold")]
             SecretManagerDto::Stronghold(stronghold) => {
                 let mut stronghold_dto = stronghold.clone();

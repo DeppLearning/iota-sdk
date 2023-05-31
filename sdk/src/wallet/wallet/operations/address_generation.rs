@@ -95,6 +95,16 @@ impl Wallet {
                     )
                     .await?
             }
+            SecretManager::Generic(generic) => {
+                generic
+                    .generate_addresses(
+                        self.coin_type.load(Ordering::Relaxed),
+                        account_index,
+                        address_index..address_index + 1,
+                        options,
+                    )
+                    .await?
+            }
             SecretManager::Mnemonic(mnemonic) => {
                 mnemonic
                     .generate_addresses(

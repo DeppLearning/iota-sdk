@@ -98,6 +98,8 @@ pub trait SignTransactionEssence: SecretManage {
 
 /// Supported secret managers
 
+pub trait SecretM: SecretManage + SignTransactionEssence {}
+
 // Boxes make this type clumsy to use.
 pub enum SecretManager {
     /// Secret manager that uses [`iota_stronghold`] as the backing storage.
@@ -117,6 +119,7 @@ pub enum SecretManager {
     /// Secret manager that's just a placeholder, so it can be provided to an online wallet, but can't be used for
     /// signing.
     Placeholder(PlaceholderSecretManager),
+    Generic(Box<dyn SecretM<Error = crate::client::Error>>)
 }
 
 impl std::fmt::Debug for SecretManager {
@@ -128,6 +131,7 @@ impl std::fmt::Debug for SecretManager {
             Self::LedgerNano(_) => f.debug_tuple("LedgerNano").field(&"...").finish(),
             Self::Mnemonic(_) => f.debug_tuple("Mnemonic").field(&"...").finish(),
             Self::Placeholder(_) => f.debug_struct("Placeholder").finish(),
+            Self::Generic(_) => f.debug_struct("Generic").finish(),
         }
     }
 }
@@ -162,6 +166,8 @@ pub enum SecretManagerDto {
     /// Placeholder
     #[serde(alias = "placeholder")]
     Placeholder,
+    #[serde(alias = "generic")]
+    Generic,
 }
 
 impl TryFrom<&SecretManagerDto> for SecretManager {
@@ -195,6 +201,7 @@ impl TryFrom<&SecretManagerDto> for SecretManager {
             }
 
             SecretManagerDto::Placeholder => Self::Placeholder(PlaceholderSecretManager),
+            SecretManagerDto::Generic => todo!()
         })
     }
 }
@@ -222,6 +229,7 @@ impl From<&SecretManager> for SecretManagerDto {
             // to know the type
             SecretManager::Mnemonic(_mnemonic) => Self::Mnemonic("...".to_string()),
             SecretManager::Placeholder(_) => Self::Placeholder,
+            SecretManager::Generic(_) => Self::Generic,
         }
     }
 }
@@ -256,6 +264,11 @@ impl SecretManage for SecretManager {
                     .generate_addresses(coin_type, account_index, address_indexes, options)
                     .await
             }
+            Self::Generic(secret_manager) => {
+                secret_manager
+                    .generate_addresses(coin_type, account_index, address_indexes, options)
+                    .await
+            }
         }
     }
 
@@ -267,6 +280,7 @@ impl SecretManage for SecretManager {
             Self::LedgerNano(secret_manager) => Ok(secret_manager.sign_ed25519(msg, chain).await?),
             Self::Mnemonic(secret_manager) => secret_manager.sign_ed25519(msg, chain).await,
             Self::Placeholder(secret_manager) => secret_manager.sign_ed25519(msg, chain).await,
+            Self::Generic(secret_manager) => Ok(secret_manager.sign_ed25519(msg, chain).await?),
         }
     }
 }
@@ -293,6 +307,11 @@ impl SignTransactionEssence for SecretManager {
                     .await
             }
             Self::Placeholder(secret_manager) => {
+                secret_manager
+                    .sign_transaction_essence(prepared_transaction_data, time)
+                    .await
+            }
+            Self::Generic(secret_manager) => {
                 secret_manager
                     .sign_transaction_essence(prepared_transaction_data, time)
                     .await
