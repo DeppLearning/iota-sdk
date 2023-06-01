@@ -117,6 +117,8 @@ pub enum SecretManager {
     /// Secret manager that's just a placeholder, so it can be provided to an online wallet, but can't be used for
     /// signing.
     Placeholder(PlaceholderSecretManager),
+    /// Generic, dynamically dispatched secret manager. This is a workaround until the SecretManager is generic.
+    Generic(Box<dyn SignTransactionEssence<Error = crate::client::Error>>)
 }
 
 impl std::fmt::Debug for SecretManager {
@@ -128,6 +130,7 @@ impl std::fmt::Debug for SecretManager {
             Self::LedgerNano(_) => f.debug_tuple("LedgerNano").field(&"...").finish(),
             Self::Mnemonic(_) => f.debug_tuple("Mnemonic").field(&"...").finish(),
             Self::Placeholder(_) => f.debug_struct("Placeholder").finish(),
+            Self::Generic(_) => f.debug_tuple("Generic").field(&"...").finish(),
         }
     }
 }
@@ -219,6 +222,7 @@ impl From<&SecretManager> for SecretManagerDto {
             // to know the type
             SecretManager::Mnemonic(_mnemonic) => Self::Mnemonic("...".to_string()),
             SecretManager::Placeholder(_) => Self::Placeholder,
+            SecretManager::Generic(_) => todo!(),
         }
     }
 }
@@ -253,6 +257,11 @@ impl SecretManage for SecretManager {
                     .generate_addresses(coin_type, account_index, address_indexes, options)
                     .await
             }
+            Self::Generic(secret_manager) => {
+                secret_manager
+                    .generate_addresses(coin_type, account_index, address_indexes, options)
+                    .await
+            }
         }
     }
 
@@ -264,6 +273,7 @@ impl SecretManage for SecretManager {
             Self::LedgerNano(secret_manager) => Ok(secret_manager.sign_ed25519(msg, chain).await?),
             Self::Mnemonic(secret_manager) => secret_manager.sign_ed25519(msg, chain).await,
             Self::Placeholder(secret_manager) => secret_manager.sign_ed25519(msg, chain).await,
+            Self::Generic(secret_manager) => secret_manager.sign_ed25519(msg, chain).await,
         }
     }
 }
@@ -290,6 +300,11 @@ impl SignTransactionEssence for SecretManager {
                     .await
             }
             Self::Placeholder(secret_manager) => {
+                secret_manager
+                    .sign_transaction_essence(prepared_transaction_data, time)
+                    .await
+            }
+            Self::Generic(secret_manager) => {
                 secret_manager
                     .sign_transaction_essence(prepared_transaction_data, time)
                     .await

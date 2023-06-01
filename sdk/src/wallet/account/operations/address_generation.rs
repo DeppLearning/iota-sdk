@@ -138,6 +138,16 @@ impl Account {
                     .await?
             }
             SecretManager::Placeholder(_) => vec![],
+            SecretManager::Generic(generic) => {
+                generic
+                    .generate_addresses(
+                        account_details.coin_type,
+                        account_details.index,
+                        address_range,
+                        Some(options),
+                    )
+                    .await?
+            }
         };
 
         drop(account_details);
